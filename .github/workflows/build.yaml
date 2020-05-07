@@ -1,0 +1,57 @@
+name: build
+
+on:
+  pull_request:  # on PRs to master
+    branches:
+      - master
+
+  schedule:  # and every evening at midnight EST
+    - cron: "0 5 * * *"
+
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2  # checkout the repo
+
+      - name: Set up Python 3.7 for linting  # setup python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+
+      - name: Install dependencies  # install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Check type hints  # ensure our type hints are comprehensive and correct
+        run: mypy automl_utils
+
+      - name: Code style  # ensure a consistent code style
+        run: pre-commit run --all-files
+
+  tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8]
+        os: [ubuntu-latest, macos-latest]
+      fail-fast: false
+    needs: lint
+
+    steps:
+    - uses: actions/checkout@v2  # checkout the repo
+
+    - name: Set up Python ${{ matrix.python-version }} on ${{ matrix.os }}  # setup python
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies  # install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+
+    - name: Test and ensure code coverage  # run our unit tests
+      run: pytest

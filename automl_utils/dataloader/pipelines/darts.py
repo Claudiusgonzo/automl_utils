@@ -90,7 +90,7 @@ class CIFAR10(DataloaderSpec):
 
         if phase == Phase.SEARCH:
             if search_split is None or search_split < 0 or search_split > 1:
-                raise ValueError('`search_split` is required during search and must be in [0, 1] inclusive.')
+                raise ValueError("`search_split` is required during search and must be in [0, 1] inclusive.")
             idx = int(search_split * len(dset))
             dset = tud.Subset(dset, list(range(0, idx) if split == Split.TRAIN else range(idx, len(dset))))
 
