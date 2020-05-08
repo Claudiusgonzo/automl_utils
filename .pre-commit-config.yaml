@@ -7,8 +7,6 @@ repos:
       - id: check-merge-conflict
       - id: check-yaml
       - id: mixed-line-ending
-      - id: no-commit-to-branch
-        args: [--branch, master]
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.1.7
     hooks:
