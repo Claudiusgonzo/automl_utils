@@ -1,9 +1,6 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-#  Copyright (c) Microsoft Corporation.
-#  Licensed under the MIT License.
-
 """Task-specific sets of operations should be derived from `OpSpace` with entries whose values are `OpContainer`s."""
 
 from __future__ import annotations
