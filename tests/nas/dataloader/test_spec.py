@@ -3,7 +3,7 @@
 
 import pytest
 
-from automl_utils.dataloader.spec import BatchConfig
+from automl_utils.nas.dataloader.spec import BatchConfig
 
 
 def test_bad_batch_config():

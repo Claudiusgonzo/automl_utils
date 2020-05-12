@@ -10,8 +10,8 @@ import torch.utils.data as tud
 import torchvision.datasets as dsets
 import torchvision.transforms as tfs
 
-from automl_utils.dataloader.spec import BatchConfig, DataloaderSpec, Phase, Split
-from automl_utils.dataloader.transforms import Cutout
+from automl_utils.nas.dataloader.spec import BatchConfig, DataloaderSpec, Phase, Split
+from automl_utils.nas.dataloader.vision_transforms import Cutout
 
 
 def _cifar_tf(valid: bool, cutout: bool) -> Callable:
