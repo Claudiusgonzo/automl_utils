@@ -3,4 +3,4 @@
 
 """Utilities for AutoML research and development."""
 
-from .dataset import make_dict_dataset  # noqa: F401
+from .data import make_dict_dataset, PrefetchToGPU  # noqa: F401
