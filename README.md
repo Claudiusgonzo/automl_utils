@@ -1,8 +1,8 @@
 # AutoML Utils
 While machine learning is facing a [reproducibility crisis](https://youtube.videoken.com/embed/jH0AgVcwIBc), the problem
-is exacerbated [[1](https://arxiv.org/abs/1902.07638), [2](https://arxiv.org/abs/1912.12522)] in the subdiscipline of 
-automated machine learning where the number of potential hyperparameters and variations in search and training regimens
-can be vast.
+is exacerbated in the subdiscipline of automated machine learning [[1](https://arxiv.org/abs/1902.07638), 
+[2](https://arxiv.org/abs/1912.12522)] where the number of potential hyperparameters and variations in search and 
+training regimens can be vast.
 
 When combined with the duplication of code across projects, often with subtle differences in implementation, it can be
 challenging to resolve whether changes in performance stem from improved methodology or from changes in configuration.
