@@ -59,7 +59,7 @@ class OpSpace(enum.Enum):
     Examples:
         >>> class MyOpSpace(OpSpace):
         ...     CONV2D = OpContainer(lambda *args, **kwargs: nn.Conv2d(*args, **kwargs))
-        ...     MAXPOOL3 = OpContainer(lambda *args, **kwargs: nn.MaxPool2d(3)
+        ...     MAXPOOL3 = OpContainer(lambda *args, **kwargs: nn.MaxPool2d(3))
         ...     AVGPOOL3 = OpContainer(lambda *args, **kwargs: nn.AvgPool2d(3))
 
     """
