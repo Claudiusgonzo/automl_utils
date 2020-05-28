@@ -51,26 +51,26 @@ class DataloaderSpec(abc.ABC):
 
     def __init__(
         self,
-        train_split: Optional[Mapping[Phase, Optional[float]]] = None,
-        config_map: Optional[Mapping[Tuple[Phase, Split], BatchConfig]] = None,
+        train_splits: Optional[Mapping[Phase, Optional[float]]] = None,
+        configs: Optional[Mapping[Tuple[Phase, Split], BatchConfig]] = None,
     ):
         """Creates a new `DataloaderSpec`.
 
         Parameters
         ----------
-        train_split: Optional[Mapping[Phase, float]], optional
+        train_splits: Optional[Mapping[Phase, float]], optional
             Overrides the reference implementation split of the training dataset for train/val in the various phases.
             Defaults to None, which signals the split from the reference implementation should be used.
-        config_map: Optional[Mapping[Tuple[Phase, Split], BatchConfig]], optional
+        configs: Optional[Mapping[Tuple[Phase, Split], BatchConfig]], optional
             Overrides the reference implementation batch sizes and input/target transforms for dataloaders used for
             training and validation data in the search and genotype evaluation phases. Any tuple not specified will
             default to those of the reference implementation. Defaults to None (no override of any dataloader config).
         """
-        train_split = train_split or {}
+        train_splits = train_splits or {}
         self._train_split_map = {}
         for phase in Phase:
-            if phase in train_split:
-                cur_split = train_split[phase]
+            if phase in train_splits:
+                cur_split = train_splits[phase]
                 if cur_split is not None and (cur_split < 0 or cur_split > 1):
                     raise ValueError(f"split must be None or in [0, 1], received {cur_split} for phase '{phase.name}'")
             else:
@@ -78,11 +78,11 @@ class DataloaderSpec(abc.ABC):
             self._train_split_map[phase] = cur_split
 
         self._config_map = {}
-        config_map = config_map or {}
+        configs = configs or {}
         for p in Phase:
             for s in Split:
-                if (p, s) in config_map:
-                    self._config_map[(p, s)] = config_map[(p, s)]
+                if (p, s) in configs:
+                    self._config_map[(p, s)] = configs[(p, s)]
                 else:
                     self._config_map[(p, s)] = self.get_default_config(p, s)
 

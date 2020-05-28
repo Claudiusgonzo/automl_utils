@@ -13,7 +13,7 @@ from automl_utils.nas import Phase
 from automl_utils.nas.dataloader import BatchConfig, darts, Split
 
 c10 = darts.CIFAR10(
-    config_map={(Phase.SEARCH, Split.EVAL): BatchConfig(batch_size=128, input_transform=None, target_transform=None)},
+    configs={(Phase.SEARCH, Split.EVAL): BatchConfig(batch_size=128, input_transform=None, target_transform=None)},
 )
 
 dl_train = c10.get_dataloader(Phase.SEARCH, Split.TRAIN, '/my/data/path', pin_memory=True, num_workers=4)

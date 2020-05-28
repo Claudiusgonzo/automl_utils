@@ -139,7 +139,7 @@ class ImageNet(CIFAR10):
         path: str,
         input_transform: Optional[Callable],
         target_transform: Optional[Callable],
-        search_split: Optional[float] = None,
+        train_split: Optional[float] = None,
         download: bool = False,
     ) -> Optional[tud.Dataset]:
         """Loads CIFAR10/ImageNet from disk and optionally downloads it if it's not present at the specified path.
@@ -168,7 +168,7 @@ class ImageNet(CIFAR10):
             The CIFAR10/ImageNet datset (or None if the requested split would result in an empty dataset).
         """
         if phase in (Phase.SEARCH, Phase.SELECT):
-            return super().load_dataset(phase, split, path, input_transform, target_transform, search_split, download)
+            return super().load_dataset(phase, split, path, input_transform, target_transform, train_split, download)
         else:
             if download is True:
                 raise ValueError("`download=True` is not compatible with ImageNet.")
