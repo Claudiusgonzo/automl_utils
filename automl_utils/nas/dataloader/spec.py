@@ -10,15 +10,7 @@ from typing import Any, Callable, Mapping, Optional, Tuple
 
 import torch.utils.data as tud
 
-
-class Phase(enum.Enum):
-    """An enum signaling whether the dataset will be used for architecture search or genotype evaluation.
-
-    Valid options include SEARCH and EVAL.
-    """
-
-    SEARCH: str = "search"
-    EVAL: str = "eval"
+from automl_utils.nas.phase import Phase
 
 
 class Split(enum.Enum):
@@ -59,26 +51,31 @@ class DataloaderSpec(abc.ABC):
 
     def __init__(
         self,
-        search_split: Optional[float] = None,
+        train_split: Optional[Mapping[Phase, Optional[float]]] = None,
         config_map: Optional[Mapping[Tuple[Phase, Split], BatchConfig]] = None,
     ):
         """Creates a new `DataloaderSpec`.
 
         Parameters
         ----------
-        search_split: Optional[float], optional
-            Overrides the reference implementation split of the training dataset for train/val in the search phase.
+        train_split: Optional[Mapping[Phase, float]], optional
+            Overrides the reference implementation split of the training dataset for train/val in the various phases.
             Defaults to None, which signals the split from the reference implementation should be used.
         config_map: Optional[Mapping[Tuple[Phase, Split], BatchConfig]], optional
             Overrides the reference implementation batch sizes and input/target transforms for dataloaders used for
             training and validation data in the search and genotype evaluation phases. Any tuple not specified will
             default to those of the reference implementation. Defaults to None (no override of any dataloader config).
         """
-        if search_split is None:
-            search_split = self.get_default_search_split()
-        elif search_split < 0 or search_split > 1:
-            raise ValueError(f"`search_split` must be between 0 and 1 inclusive, received {search_split}")
-        self._search_split = search_split
+        train_split = train_split or {}
+        self._train_split_map = {}
+        for phase in Phase:
+            if phase in train_split:
+                cur_split = train_split[phase]
+                if cur_split is not None and (cur_split < 0 or cur_split > 1):
+                    raise ValueError(f"split must be None or in [0, 1], received {cur_split} for phase '{phase.name}'")
+            else:
+                cur_split = self.get_default_train_split(phase)
+            self._train_split_map[phase] = cur_split
 
         self._config_map = {}
         config_map = config_map or {}
@@ -97,7 +94,7 @@ class DataloaderSpec(abc.ABC):
         path: str,
         input_transform: Optional[Callable],
         target_transform: Optional[Callable],
-        search_split: Optional[float] = None,
+        train_split: Optional[float] = None,
         download: bool = False,
     ) -> Optional[tud.Dataset]:
         """A method, to be overridden in derived classes, that produces the requested dataset.
@@ -114,9 +111,9 @@ class DataloaderSpec(abc.ABC):
             How the input data should be transformed. If None, no transform should be applied.
         target_transform: Optional[Callable]
             How the target data should be transformed. If None, no transform should be applied.
-        search_split: Optional[float], optional
-            How the training set should be split in the search phase for the train/val dataloaders. Defaults to None,
-            but must be in the range [0, 1] inclusive if `phase` == Phase.SEARCH.
+        train_split: Optional[float], optional
+            How the training set should be split in the search/select phase for the train/val dataloaders. Defaults to
+            None, but must be in the range [0, 1] inclusive if specified.
         download: bool, optional
             Whether the data should be downloaded if it does not yet exist at the specified `path`. Defaults to False.
 
@@ -135,18 +132,39 @@ class DataloaderSpec(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def get_default_search_split() -> float:
-        """Returns the split of the training dataset used during search in the reference implementation."""
+    def get_default_train_split(phase: Phase) -> Optional[float]:
+        """Returns the fraction of the dataset used for training during `phase` in the reference implementation.
+
+        Parameters
+        ----------
+        phase: Phase
+            The phase for which the dataset is to be used
+
+        Returns
+        -------
+        float or None
+            A float representing the fraction of the dataset to use or None if a dedicated training set is available
+        """
         raise NotImplementedError
 
     def get_config(self, phase: Phase, split: Split) -> BatchConfig:
         """Returns the `BatchConfig` to be used, including any overrides, in dataloader creation."""
         return self._config_map[(phase, split)]
 
-    @property
-    def search_split(self) -> float:
-        """Returns the training dataset split used during search, including any overrides, in dataloader creation."""
-        return self._search_split
+    def get_train_split(self, phase: Phase) -> Optional[float]:
+        """Returns the fraction of the dataset used for training during `phase`, including any overrides.
+
+        Parameters
+        ----------
+        phase: Phase
+            The phase for which the dataset is to be used
+
+        Returns
+        -------
+        float or None
+            A float representing the fraction of the dataset to use or None if a dedicated training set is available
+        """
+        return self._train_split_map[phase]
 
     def get_dataloader(
         self, phase: Phase, split: Split, path: str, download: bool = False, **kwargs: Any
@@ -172,9 +190,9 @@ class DataloaderSpec(abc.ABC):
             The requested dataloader (or None if the requested configuration would results in an empty dataloader).
         """
         config = self.get_config(phase, split)
-        ds_args = {"search_split": self.search_split} if phase == phase.SEARCH else {}
+        ts = self.get_train_split(phase)
         dset = self.load_dataset(
-            phase, split, path, config.input_transform, config.target_transform, download=download, **ds_args
+            phase, split, path, config.input_transform, config.target_transform, download=download, train_split=ts,
         )
         if not dset:
             return None

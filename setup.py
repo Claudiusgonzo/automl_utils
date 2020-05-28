@@ -12,7 +12,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), "README.md"), encoding
     setup(
         name="automl_utils",
         version="0.1.0",
-        description="Streamlining reproducibleAutoML research.",
+        description="Facilitating reproducible AutoML research.",
         long_description=long_description,
         long_description_content_type="text/markdown",
         author="Neil Tenenholtz",
@@ -27,10 +27,10 @@ with open(path.join(path.abspath(path.dirname(__file__)), "README.md"), encoding
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
         ],
-        keywords="pytorch neural architecture search NAS AutoML",
-        packages=find_packages(exclude=["tests", "examples"]),
-        python_requires=">=3.7, <4",
-        install_requires=["torch ~= 1.3"],
+        keywords="PyTorch AutoML NAS reproducibility",
+        packages=find_packages(exclude=["tests"]),
+        python_requires="~=3.7",
+        install_requires=["torch ~= 1.3", "torchvision ~= 0.5"],
         extras_require={
             "dev": [
                 "black",

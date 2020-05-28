@@ -9,16 +9,15 @@ split in the search phase or the batching/pre-processing/augmentation, this may 
 via a supplied mapping. Any argument not set will implicitly retain its default value. See below for an example.
 
 ```python
-from automl_utils.nas.dataloader import BatchConfig, Phase, Split
-from automl_utils.nas.dataloader import darts
+from automl_utils.nas import Phase
+from automl_utils.nas.dataloader import BatchConfig, darts, Split
 
 c10 = darts.CIFAR10(
-    search_split=0.8,
     config_map={(Phase.SEARCH, Split.EVAL): BatchConfig(batch_size=128, input_transform=None, target_transform=None)},
 )
 
-dl_train = c10.get_dataloader(Phase.SEARCH, Split.TRAIN, '/my/data/path', kwargs={'pin_memory': True, 'num_workers': 4})
-dl_eval = c10.get_dataloader(Phase.SEARCH, Split.EVAL, '/my/data/path', kwargs={'pin_memory': True, 'num_workers': 4})
+dl_train = c10.get_dataloader(Phase.SEARCH, Split.TRAIN, '/my/data/path', pin_memory=True, num_workers=4)
+dl_eval = c10.get_dataloader(Phase.SEARCH, Split.VAL, '/my/data/path', pin_memory=True, num_workers=4)
 ``` 
 
 ## Creating a New Reference Implementation
@@ -41,12 +40,12 @@ class MyDatasetImpl(DataloaderSpec):
         pass
     
     @staticmethod
-    def get_default_search_split():
+    def get_default_train_split(...):
         # returns the default percentage (as a fraction between 0 and 1) of the training data that should be used for
-        # training set during architecture search
+        # training set in the specified phase
         pass
 ```
 
 Should the default `get_dataloader` implementation not be sufficient, it may be overridden in derived classes. If doing
-so, please remember to use the `get_config` method and `search_split` property, which respect overrides supplied by the
+so, please remember to use the `get_config` and `get_train_split` methods, which respect overrides supplied by the
 user in the `__init__` method, to fetch dataset and dataloader configuration parameters. 

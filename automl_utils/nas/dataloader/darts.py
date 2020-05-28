@@ -10,8 +10,9 @@ import torch.utils.data as tud
 import torchvision.datasets as dsets
 import torchvision.transforms as tfs
 
-from automl_utils.nas.dataloader.spec import BatchConfig, DataloaderSpec, Phase, Split
+from automl_utils.nas.dataloader.spec import BatchConfig, DataloaderSpec, Split
 from automl_utils.nas.dataloader.vision_transforms import Cutout
+from automl_utils.nas.phase import Phase
 
 
 def _cifar_tf(valid: bool, cutout: bool) -> Callable:
@@ -55,7 +56,7 @@ class CIFAR10(DataloaderSpec):
         path: str,
         input_transform: Optional[Callable],
         target_transform: Optional[Callable],
-        search_split: Optional[float] = None,
+        train_split: Optional[float] = None,
         download: bool = False,
     ) -> Optional[tud.Dataset]:
         """Loads CIFAR10 from disk and optionally downloads it if it's not present at the specified path.
@@ -72,7 +73,7 @@ class CIFAR10(DataloaderSpec):
             How the input data should be transformed. If None, no transform should be applied.
         target_transform: Optional[Callable]
             How the target data should be transformed. If None, no transform should be applied.
-        search_split: Optional[float], optional
+        train_split: Optional[float], optional
             How the training set should be split in the search phase for the train/val dataloaders. Defaults to None,
             but must be in the range [0, 1] inclusive if `phase` == Phase.SEARCH.
         download: bool, optional
@@ -83,15 +84,24 @@ class CIFAR10(DataloaderSpec):
         Optional[torch.utils.data.Dataset]
             The CIFAR10 datset (or None if the requested split would result in an empty dataset).
         """
+        if phase != Phase.SEARCH and train_split is not None:
+            raise ValueError("DARTS only splits the training dataset in the search phase.")
+        elif phase == Phase.SEARCH:
+            if train_split is None:
+                raise ValueError("`train_split` cannot be None for the search phase")
+            elif train_split < 0 or train_split > 1:
+                raise ValueError("`train_split` must be in [0, 1] for the search phase")
+
         if phase == Phase.SEARCH or split == Split.TRAIN:
+            # darts uses only the training dataset in the search phase (it splits it) or for training genotypes
             dset = dsets.CIFAR10(path, True, input_transform, target_transform, download)
         else:
+            # darts uses the full validation set as the val set for Phase.SELECT and Phase.EVAL
             dset = dsets.CIFAR10(path, False, input_transform, target_transform, download)
 
         if phase == Phase.SEARCH:
-            if search_split is None or search_split < 0 or search_split > 1:
-                raise ValueError("`search_split` is required during search and must be in [0, 1] inclusive.")
-            idx = int(search_split * len(dset))
+            # in search, darts splits the "true training set" into a search-train set and a search-val sset.
+            idx = int(train_split * len(dset))  # type: ignore
             dset = tud.Subset(dset, list(range(0, idx) if split == Split.TRAIN else range(idx, len(dset))))
 
         return dset if dset else None
@@ -101,17 +111,19 @@ class CIFAR10(DataloaderSpec):
         """Returns the `BatchConfig` corresponding to the dataloaders used in DARTS."""
         if phase == Phase.SEARCH:
             return BatchConfig(batch_size=64, input_transform=_cifar_tf(False, False), target_transform=None)
-        elif phase == Phase.EVAL and split == Split.TRAIN:
+        elif phase in (Phase.SELECT, Phase.EVAL) and split == Split.TRAIN:
             return BatchConfig(batch_size=96, input_transform=_cifar_tf(False, True), target_transform=None)
-        elif phase == Phase.EVAL and split == Split.VAL:
+        elif phase in (Phase.SELECT, Phase.EVAL) and split == Split.VAL:
             return BatchConfig(batch_size=96, input_transform=_cifar_tf(True, False), target_transform=None)
         else:
             raise ValueError("Invalid combination of phase and split")
 
     @staticmethod
-    def get_default_search_split() -> float:
+    def get_default_train_split(phase: Phase) -> Optional[float]:
         """Returns the split of the training dataset used during architecture search in DARTS."""
-        return 0.5
+        if phase == Phase.SEARCH:
+            return 0.5
+        return None
 
 
 class ImageNet(CIFAR10):
@@ -155,7 +167,7 @@ class ImageNet(CIFAR10):
         Optional[torch.utils.data.Dataset]
             The CIFAR10/ImageNet datset (or None if the requested split would result in an empty dataset).
         """
-        if phase == Phase.SEARCH:
+        if phase in (Phase.SEARCH, Phase.SELECT):
             return super().load_dataset(phase, split, path, input_transform, target_transform, search_split, download)
         else:
             if download is True:
@@ -177,7 +189,7 @@ class ImageNet(CIFAR10):
     @staticmethod
     def get_default_config(phase: Phase, split: Split) -> BatchConfig:
         """Returns the `BatchConfig` corresponding to the dataloaders used in DARTS."""
-        if phase == Phase.SEARCH:
+        if phase in (Phase.SEARCH, Phase.SELECT):
             return CIFAR10.get_default_config(phase, split)
         elif phase == Phase.EVAL and split == Split.TRAIN:
             return BatchConfig(batch_size=128, input_transform=_imagenet_tf(False), target_transform=None)
