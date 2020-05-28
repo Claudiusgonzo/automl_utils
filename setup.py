@@ -46,7 +46,8 @@ with open(path.join(path.abspath(path.dirname(__file__)), "README.md"), encoding
                 "pytest",
                 "pytest-cov",
                 "pytest-xdist",
-            ]
+            ],
+            "tensorboard": ["tensorflow >= 1.0"],
         },
         package_data={"automl_utils": ["py.typed"]},
         zip_safe=False,

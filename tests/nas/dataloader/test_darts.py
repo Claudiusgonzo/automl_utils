@@ -20,13 +20,15 @@ def reset_seed():
 @pytest.mark.parametrize("phase", [Phase.SEARCH, Phase.SELECT])
 @pytest.mark.parametrize("split", [Split.TRAIN, Split.VAL])
 @pytest.mark.parametrize("num_workers", [0, 2])
-def test_cifar_imagenet_equivalence(cifar_path, phase, split, num_workers):
+def test_cifar_imagenet_equivalence(cifar10_path, phase, split, num_workers):
     c10 = darts.CIFAR10()
     imagenet = darts.ImageNet()
 
-    dl_c10 = c10.get_dataloader(phase, split, cifar_path, False, num_workers=num_workers, pin_memory=True, shuffle=True)
+    dl_c10 = c10.get_dataloader(
+        phase, split, cifar10_path, False, num_workers=num_workers, pin_memory=True, shuffle=True
+    )
     dl_imagenet = imagenet.get_dataloader(
-        phase, split, cifar_path, False, num_workers=num_workers, pin_memory=True, shuffle=True
+        phase, split, cifar10_path, False, num_workers=num_workers, pin_memory=True, shuffle=True
     )
 
     batches = []
@@ -46,9 +48,9 @@ def test_cifar_imagenet_equivalence(cifar_path, phase, split, num_workers):
 
 @pytest.mark.parametrize("split", [Split.TRAIN, Split.VAL])
 @pytest.mark.parametrize("num_workers", [0, 2])
-def test_smoke_c10_eval(cifar_path, split, num_workers):
+def test_smoke_c10_eval(cifar10_path, split, num_workers):
     c10 = darts.CIFAR10()
-    dl = c10.get_dataloader(Phase.EVAL, split, cifar_path, False, num_workers=num_workers, shuffle=True)
+    dl = c10.get_dataloader(Phase.EVAL, split, cifar10_path, False, num_workers=num_workers, shuffle=True)
 
     for i, b in enumerate(dl):
         if i > 4:
