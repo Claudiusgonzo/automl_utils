@@ -11,7 +11,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), "README.md"), encoding
     long_description = f.read()
     setup(
         name="automl-utils",
-        version="0.1.0",
+        version="0.1.0a1",
         description="Facilitating reproducible AutoML research.",
         long_description=long_description,
         long_description_content_type="text/markdown",
